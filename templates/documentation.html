@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Т-Банк Система блокировки платежей - Документация API{% endblock %}
+
+{% block extra_head %}
+<!-- Swagger UI CSS -->
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui.css" />
+<style>
+    .swagger-ui {
+        margin-top: 1rem;
+    }
+    /* Переопределение стилей Swagger UI для лучшей читаемости на темном фоне */
+    .swagger-ui, 
+    .swagger-ui .info, 
+    .swagger-ui .scheme-container {
+        background-color: #343a40 !important;
+    }
+    
+    /* Улучшение контрастности текста - делаем всё белым */
+    .swagger-ui *:not(.opblock):not(.opblock-tag):not(.btn):not(.download-url-wrapper):not(.model-box):not(.model):not(.model-title):not(.headerline):not(a):not(.microlight):not(.download-url-button):not(.content) {
+        color: #ffffff !important;
+    }
+    
+    /* Заголовки и описания */
+    .swagger-ui .info .title,
+    .swagger-ui .info h1,
+    .swagger-ui .info h2,
+    .swagger-ui .info h3,
+    .swagger-ui .info h4,
+    .swagger-ui .info h5 {
+        color: #ffffff !important;
+    }
+    
+    /* Параграфы и списки */
+    .swagger-ui .info p, 
+    .swagger-ui .info li, 
+    .swagger-ui .info table,
+    .swagger-ui p,
+    .swagger-ui li {
+        color: #ffffff !important;
+    }
+    
+    /* Теги операций */
+    .swagger-ui .opblock-tag,
+    .swagger-ui .opblock .opblock-summary-operation-id,
+    .swagger-ui .opblock .opblock-summary-path,
+    .swagger-ui .opblock .opblock-summary-path__deprecated,
+    .swagger-ui .opblock .opblock-summary-description {
+        color: #ffffff !important;
+    }
+    
+    /* Параметры и свойства */
+    .swagger-ui .parameters-col_name,
+    .swagger-ui .parameters-col_description,
+    .swagger-ui .parameter__name,
+    .swagger-ui .parameter__type,
+    .swagger-ui .parameter__in,
+    .swagger-ui .parameter__deprecated,
+    .swagger-ui .parameter__required,
+    .swagger-ui .response-col_status,
+    .swagger-ui .response-col_description,
+    .swagger-ui .response-col_links,
+    .swagger-ui .prop-type,
+    .swagger-ui .prop-format,
+    .swagger-ui .property-row,
+    .swagger-ui table thead tr td,
+    .swagger-ui table thead tr th,
+    .swagger-ui .model-title,
+    .swagger-ui .model,
+    .swagger-ui .model-box,
+    .swagger-ui .model-container,
+    .swagger-ui .model-schema,
+    .swagger-ui .model-example {
+        color: #ffffff !important;
+    }
+    
+    /* Markdown содержимое */
+    .swagger-ui .markdown p, 
+    .swagger-ui .markdown li, 
+    .swagger-ui .renderedMarkdown p, 
+    .swagger-ui .renderedMarkdown li {
+        color: #ffffff !important;
+    }
+    
+    /* Дополнительные элементы */
+    .swagger-ui .tab,
+    .swagger-ui .opblock-description-wrapper p,
+    .swagger-ui .opblock-external-docs-wrapper p,
+    .swagger-ui .opblock-title_normal p,
+    .swagger-ui .response-content-type,
+    .swagger-ui .opblock-body pre.microlight,
+    .swagger-ui .opblock-body pre,
+    .swagger-ui .btn-group label,
+    .swagger-ui .servers-title,
+    .swagger-ui .servers>label,
+    .swagger-ui .servers,
+    .swagger-ui select {
+        color: #ffffff !important;
+    }
+    
+    /* Улучшение видимости кнопок и элементов управления */
+    .swagger-ui select {
+        background-color: #444 !important;
+        border-color: #666 !important;
+    }
+    
+    /* Схемы и модели */
+    .swagger-ui .model .property {
+        color: #ffffff !important;
+    }
+
+    /* Тело запросов и ответов */
+    .swagger-ui .opblock .opblock-section-header h4,
+    .swagger-ui .opblock .opblock-section-header>label,
+    .swagger-ui .opblock .opblock-summary-method {
+        color: inherit !important;
+    }
+    
+    /* HTTP метод (POST, GET и т.д.) */
+    .swagger-ui .opblock-summary-method {
+        background-color: inherit !important;
+    }
+    
+    /* Описание полей в схемах */
+    .swagger-ui .model-box .model .property.primitive {
+        color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-book me-2"></i>Документация API</h1>
+    <p class="lead">
+        Изучите API системы блокировки платежей Т-Банка с помощью интерактивной документации Swagger ниже.
+    </p>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="swagger-ui"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Зависимости Swagger UI JS -->
+<script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-bundle.js"></script>
+<script src="https://unpkg.com/swagger-ui-dist@4.5.0/swagger-ui-standalone-preset.js"></script>
+
+<script>
+    window.onload = function() {
+        // Инициализация Swagger UI
+        const ui = SwaggerUIBundle({
+            url: "/openapi.yaml",
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            layout: "BaseLayout",
+            syntaxHighlight: {
+                activated: true,
+                theme: "agate"
+            }
+        });
+        
+        window.ui = ui;
+    };
+</script>
+{% endblock %}

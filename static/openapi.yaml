@@ -1,0 +1,429 @@
+openapi: 3.0.0
+info:
+  title: Т-Банк Система блокировки платежей
+  description: |
+    API для системы блокировки платежей Т-Банка для управления блокировками
+    платежей клиентов с категоризацией причин.
+    
+    Данный API позволяет банковскому персоналу:
+    - Блокировать платежи для конкретных клиентов с указанием причины
+    - Разблокировать платежи клиентов после устранения проблем
+    - Проверять статус блокировки клиента
+    - Различать блокировки из-за подозрений на мошенничество и технических проблем
+    - Просматривать историю блокировок для целей аудита и соответствия требованиям ЦБ РФ
+  version: 1.0.0
+  contact:
+    name: Служба поддержки API Т-Банка
+    email: api-support@t-bank.example.com
+servers:
+  - url: '/api/v1'
+    description: Основной API сервер
+tags:
+  - name: Payment Blocks
+    description: Операции для блокировки и разблокировки платежей клиентов
+paths:
+  /health:
+    get:
+      summary: Проверка работоспособности API
+      description: Простой эндпоинт для проверки работоспособности API
+      tags:
+        - System
+      responses:
+        '200':
+          description: API работает нормально
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+  
+  /clients/{client_identifier}/block:
+    post:
+      summary: Блокировка платежей для конкретного клиента
+      description: |
+        Создает новую блокировку платежей для указанного клиента.
+        Это предотвратит любые исходящие платежи для этого клиента до снятия блокировки.
+      tags:
+        - Payment Blocks
+      parameters:
+        - name: client_identifier
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockPaymentRequest'
+      responses:
+        '201':
+          description: Client payments blocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentBlock'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Client already has an active block
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /clients/{client_identifier}/unblock:
+    post:
+      summary: Разблокировка платежей для конкретного клиента
+      description: |
+        Снимает активную блокировку платежей для указанного клиента.
+        Это позволит возобновить исходящие платежи.
+      tags:
+        - Payment Blocks
+      parameters:
+        - name: client_identifier
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnblockPaymentRequest'
+      responses:
+        '200':
+          description: Client payments unblocked successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentBlock'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Client not found or no active block
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /clients/{client_identifier}/status:
+    get:
+      summary: Проверка статуса блокировки платежей клиента
+      description: |
+        Получает текущий статус блокировки для указанного клиента.
+        Включает подробную информацию об активной блокировке, если таковая имеется.
+      tags:
+        - Payment Blocks
+      parameters:
+        - name: client_identifier
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientStatus'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /clients/{client_identifier}/history:
+    get:
+      summary: Получение истории блокировок платежей для клиента
+      description: |
+        Возвращает полную историю блокировок платежей для указанного клиента.
+        Полезно для аудита и соответствия требованиям регуляторов.
+      tags:
+        - Payment Blocks
+      parameters:
+        - name: client_identifier
+          in: path
+          required: true
+          description: Unique identifier for the client
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client block history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientBlockHistory'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /blocks:
+    get:
+      summary: Список всех блокировок платежей с параметрами фильтрации
+      description: |
+        Возвращает список блокировок платежей с возможностью фильтрации по статусу и причине.
+        Результаты разбиты на страницы для повышения производительности.
+      tags:
+        - Payment Blocks
+      parameters:
+        - name: active
+          in: query
+          required: false
+          description: Filter by active status
+          schema:
+            type: boolean
+        - name: reason
+          in: query
+          required: false
+          description: Filter by block reason
+          schema:
+            type: string
+            enum: [fraud_suspicion, invalid_details, other]
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          description: Offset for pagination
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Payment blocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blocks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentBlock'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    BlockReason:
+      type: string
+      enum:
+        - fraud_suspicion
+        - invalid_details
+        - other
+      description: |
+        Причина блокировки платежей клиента:
+        * `fraud_suspicion` - Подозрение на мошенничество
+        * `invalid_details` - Недействительные платежные реквизиты
+        * `other` - Другие причины, не попадающие в указанные категории
+    
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          description: Internal identifier for the client
+        client_identifier:
+          type: string
+          description: Unique external identifier for the client
+        name:
+          type: string
+          description: Client's name or business name
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp of when the client record was created
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Timestamp of the last update to the client record
+        is_blocked:
+          type: boolean
+          readOnly: true
+          description: Whether the client currently has an active payment block
+      required:
+        - client_identifier
+        - name
+    
+    PaymentBlock:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          description: Unique identifier for the payment block
+        client_id:
+          type: integer
+          format: int64
+          description: Reference to the client
+        reason:
+          $ref: '#/components/schemas/BlockReason'
+        details:
+          type: string
+          nullable: true
+          description: Additional details explaining the block reason
+        is_active:
+          type: boolean
+          description: Whether the block is currently active
+        blocked_at:
+          type: string
+          format: date-time
+          description: Timestamp when the block was created
+        unblocked_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when the block was removed (if applicable)
+        blocked_by:
+          type: string
+          description: User who created the block
+        unblocked_by:
+          type: string
+          nullable: true
+          description: User who removed the block (if applicable)
+        unblock_reason:
+          type: string
+          nullable: true
+          description: Reason for removing the block (if applicable)
+      required:
+        - client_id
+        - reason
+        - blocked_by
+    
+    BlockPaymentRequest:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/BlockReason'
+        details:
+          type: string
+          nullable: true
+          description: Additional details explaining the block reason
+        blocked_by:
+          type: string
+          description: User who is creating the block
+      required:
+        - reason
+        - blocked_by
+    
+    UnblockPaymentRequest:
+      type: object
+      properties:
+        unblocked_by:
+          type: string
+          description: User who is removing the block
+        reason:
+          type: string
+          nullable: true
+          description: Reason for removing the block
+      required:
+        - unblocked_by
+    
+    ClientStatus:
+      type: object
+      properties:
+        client_identifier:
+          type: string
+          description: Unique identifier for the client
+        is_blocked:
+          type: boolean
+          description: Whether the client currently has an active payment block
+        block_details:
+          $ref: '#/components/schemas/PaymentBlock'
+          nullable: true
+          description: Details of the active block (if any)
+    
+    ClientBlockHistory:
+      type: object
+      properties:
+        client_identifier:
+          type: string
+          description: Unique identifier for the client
+        client_name:
+          type: string
+          description: Client's name or business name
+        block_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentBlock'
+          description: History of all payment blocks for this client
+    
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          nullable: true
+          description: Additional details about the error
+      required:
+        - error
